@@ -2,21 +2,11 @@ import os
 from app import app, db
 from app.models import Achievement
 
-# Configure the database URI using the Railway-provided DATABASE_URL
-database_url = os.environ.get('DATABASE_URL')
-if database_url:
-    # Convert the URI scheme if needed (Railway might provide "postgres://")
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-else:
-    raise ValueError("DATABASE_URL environment variable not set.")
-
 if __name__ == '__main__':
     with app.app_context():
-        # In production, avoid dropping the database!
+        # Only drop tables in development mode.
         if app.config.get("DEBUG", False):
-            db.drop_all()  # Only for development purposes.
+            db.drop_all()  # Caution: only for development!
         db.create_all()
 
         # Seed achievements if they do not already exist
@@ -41,7 +31,7 @@ if __name__ == '__main__':
         db.session.commit()
         print("Achievements seeded!")
 
-    # Get host and port for production deployment; port defaults to 5000 if not set
+    # Retrieve port for production; defaults to 5000 if not set.
     port = int(os.environ.get("PORT", 5000))
     debug_mode = app.config.get("DEBUG", False)
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
