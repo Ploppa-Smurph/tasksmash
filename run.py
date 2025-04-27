@@ -1,12 +1,25 @@
+import os
 from app import app, db
 from app.models import Achievement
 
+# Configure the database URI using the Railway-provided DATABASE_URL
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    # Convert the URI scheme if needed (Railway might provide "postgres://")
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    raise ValueError("DATABASE_URL environment variable not set.")
+
 if __name__ == '__main__':
     with app.app_context():
-        db.drop_all()  # Optional: Only for development
+        # In production, avoid dropping the database!
+        if app.config.get("DEBUG", False):
+            db.drop_all()  # Only for development purposes.
         db.create_all()
 
-        # Seed achievements
+        # Seed achievements if they do not already exist
         achievements = [
             Achievement(name='Task Initiator', description='Created 10 tasks'),
             Achievement(name='Goal Crusher', description='Completed 5 tasks'),
@@ -22,12 +35,13 @@ if __name__ == '__main__':
             Achievement(name='Empty Inbox', description='You have no incomplete tasks'),
             Achievement(name='Procrastinator', description='You edited the same task 3 times')
         ]
-
-
-        for ach in achievements:
-            if not Achievement.query.filter_by(name=ach.name).first():
-                db.session.add(ach)
+        for achievement in achievements:
+            if not Achievement.query.filter_by(name=achievement.name).first():
+                db.session.add(achievement)
         db.session.commit()
         print("Achievements seeded!")
 
-    app.run(debug=True)
+    # Get host and port for production deployment; port defaults to 5000 if not set
+    port = int(os.environ.get("PORT", 5000))
+    debug_mode = app.config.get("DEBUG", False)
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
