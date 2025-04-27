@@ -1,15 +1,14 @@
 import os
 from app import app, db
 from app.models import Achievement
+from flask_migrate import upgrade
 
 if __name__ == '__main__':
     with app.app_context():
-        # Only drop tables in development mode.
-        if app.config.get("DEBUG", False):
-            db.drop_all()  # Caution: only for development!
-        db.create_all()
-
-        # Seed achievements if they do not already exist
+        # Run migrations to update the database schema to the latest revision.
+        upgrade()
+        
+        # Seed achievements if they do not already exist.
         achievements = [
             Achievement(name='Task Initiator', description='Created 10 tasks'),
             Achievement(name='Goal Crusher', description='Completed 5 tasks'),
@@ -31,7 +30,6 @@ if __name__ == '__main__':
         db.session.commit()
         print("Achievements seeded!")
 
-    # Retrieve port for production; defaults to 5000 if not set.
+    # Use Railway's environment variable for the port (Railway sets PORT automatically).
     port = int(os.environ.get("PORT", 5000))
-    debug_mode = app.config.get("DEBUG", False)
-    app.run(host='0.0.0.0', port=port, debug=debug_mode)
+    app.run(host='0.0.0.0', port=port, debug=False)

@@ -6,7 +6,7 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "superSecretKey")
     # Prefer the hosting service's DATABASE_URL if available.
-    _database_url = os.getenv("DATABASE_URL")
+    _database_url = os.environ.get("DATABASE_URL")
     if _database_url:
         # Convert the URI scheme if needed
         SQLALCHEMY_DATABASE_URI = _database_url.replace("postgres://", "postgresql://", 1)
