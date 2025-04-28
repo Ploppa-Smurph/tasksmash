@@ -1,38 +1,182 @@
 {% extends 'base.html' %}
 
+{% block head %}
+  <title>Task Details</title>
+  <style>
+    /* Page container styling */
+    section {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: "Poppins", sans-serif;
+    }
+    
+    h1, h2 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+    
+    /* Task details styling */
+    .task-details p {
+      font-size: 1.1em;
+      margin: 10px 0;
+      color: #444;
+    }
+    
+    /* Comments container */
+    .comment-container {
+      margin-top: 30px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+    }
+    
+    /* Each comment styling */
+    .comment {
+      background-color: #f9f9f9;
+      border-left: 3px solid #1abc9c;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 10px 15px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+    .comment-header {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .comment-date {
+      font-size: 0.85em;
+      color: #777;
+      margin-bottom: 10px;
+    }
+    .comment-body {
+      font-size: 1em;
+      color: #333;
+    }
+    
+    /* Dropdown for comment options */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+      margin-top: 8px;
+    }
+    .dropbtn {
+      background-color: #1abc9c;
+      color: white;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 3px;
+      font-size: 0.85em;
+      cursor: pointer;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #fff;
+      min-width: 160px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 10px;
+      z-index: 1;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .dropdown-content form {
+      margin: 0;
+      padding: 5px 0;
+    }
+    .dropdown-content textarea {
+      width: 100%;
+      resize: vertical;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    
+    /* Button styling - consistent with the rest of the app */
+    .btn {
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 4px 10px;
+      font-size: 0.85em;
+      cursor: pointer;
+      margin: 4px 2px;
+    }
+    .btn:hover {
+      background-color: #148f77;
+    }
+    
+    /* Form and textarea styling */
+    textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: "Poppins", sans-serif;
+      margin-bottom: 10px;
+      resize: vertical;
+    }
+    input[type="submit"] {
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    input[type="submit"]:hover {
+      background-color: #148f77;
+    }
+  </style>
+{% endblock %}
+
 {% block body %}
 <section>
-    <h1>Task Details</h1>
+  <h1>Task Details</h1>
+  <div class="task-details">
     <p><strong>Task:</strong> {{ task.content }}</p>
     <p><strong>Created:</strong> {{ task.created_at.strftime("%Y-%m-%d") }}</p>
-
-    <h2>Comments</h2>
+  </div>
+  
+  <h2>Comments</h2>
+  <div class="comment-container">
     {% for comment in comments %}
-        <div>
-            <p><strong>{{ comment.user.username }}</strong>: {{ comment.content }}</p>
-            <p>Posted on {{ comment.created_at.strftime("%Y-%m-%d") }}</p>
-            <div class="dropdown">
-                <button class="dropbtn">Options</button>
-                <div class="dropdown-content">
-                    <form action="{{ url_for('add_comment', task_id=task.id) }}" method="POST">
-                        <textarea name="comment" placeholder="Add a comment" required></textarea>
-                        <button type="submit">Add Comment</button>
-                    </form>
-                    <form action="{{ url_for('edit_todo', id=task.id) }}" method="GET">
-                        <button type="submit">Edit</button>
-                    </form>
-                    <form action="{{ url_for('delete_todo', id=task.id) }}" method="POST">
-                        <button type="submit">Delete</button>
-                    </form>
-                </div>
-            </div>
+      <div class="comment">
+        <div class="comment-header">{{ comment.user.username }}</div>
+        <div class="comment-body">{{ comment.content }}</div>
+        <div class="comment-date">Posted on {{ comment.created_at.strftime("%Y-%m-%d") }}</div>
+        <!-- Options Dropdown for comment; you can remove if not needed -->
+        <div class="dropdown">
+          <button class="dropbtn">Options</button>
+          <div class="dropdown-content">
+            <form action="{{ url_for('add_comment', task_id=task.id) }}" method="POST">
+              <textarea name="comment" placeholder="Add a comment" required></textarea>
+              <button type="submit" class="btn">Add Comment</button>
+            </form>
+            <form action="{{ url_for('edit_todo', id=task.id) }}" method="GET">
+              <button type="submit" class="btn">Edit</button>
+            </form>
+            <form action="{{ url_for('delete_todo', id=task.id) }}" method="POST">
+              <button type="submit" class="btn">Delete</button>
+            </form>
+          </div>
         </div>
+      </div>
     {% endfor %}
-
-    <!-- Add Comment Form -->
-    <form action="{{ url_for('add_comment', task_id=task.id) }}" method="POST">
-        <textarea name="comment" placeholder="Add a comment" required></textarea>
-        <input type="submit" value="Submit Comment">
-    </form>
+  </div>
+  
+  <h2>Add a Comment</h2>
+  <form action="{{ url_for('add_comment', task_id=task.id) }}" method="POST">
+    <textarea name="comment" placeholder="Add a comment" required></textarea>
+    <input type="submit" value="Submit Comment">
+  </form>
 </section>
 {% endblock %}

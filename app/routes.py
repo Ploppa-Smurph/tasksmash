@@ -6,6 +6,7 @@ from flask_login import login_user, login_required, current_user, logout_user
 import jwt
 from datetime import datetime, timedelta
 from app.forms import LoginForm, RegisterForm, EditTaskForm
+from sqlalchemy import func
 
 # -----------------------------
 # Password Reset Routes
@@ -31,7 +32,6 @@ def reset_request():
         else:
             flash("No user found with that email address.", "error")
     return render_template("resetRequest.html")
-
 
 @app.route("/reset_password/<token>", methods=["GET", "POST"])
 def reset_password(token):
@@ -267,18 +267,38 @@ def unfollow_user(user_id):
 # -----------------------------
 # Dashboard Route
 # -----------------------------
-@app.route("/dashboard")
+@app.route('/dashboard')
 @login_required
 def dashboard():
-    user_id = current_user.id
-    tasks = Todo.query.filter_by(user_id=user_id).all()
-    followed_users_tasks = Todo.query.join(Follow, Follow.followee_id == Todo.user_id).filter(Follow.follower_id == user_id).all()
-    non_followed_users = User.query.filter(User.id != user_id).filter(
-        ~User.id.in_(db.session.query(Follow.followee_id).filter(Follow.follower_id == user_id))
-    ).all()
-    user_achievements = Achievement.query.join(UserAchievement).filter(UserAchievement.user_id == user_id).all()
-    return render_template("dashboard.html", tasks=tasks, followed_users_tasks=followed_users_tasks, non_followed_users=non_followed_users, achievements=user_achievements)
+    # User's own tasks
+    tasks = Todo.query.filter_by(user_id=current_user.id).order_by(Todo.created_at.desc()).all()
 
+    # Tasks from followed users
+    followed_ids = [follow.followee_id for follow in current_user.followed_users]
+    followed_users_tasks = []
+    if followed_ids:
+        followed_users_tasks = Todo.query.filter(Todo.user_id.in_(followed_ids)).order_by(Todo.created_at.desc()).all()
+
+    # Recently posted tasks, excluding those by the current user
+    recent_tasks = Todo.query.filter(Todo.user_id != current_user.id).order_by(Todo.created_at.desc()).limit(10).all()
+
+    # Popular tasks: tasks sorted by the number of comments
+    popular_tasks = db.session.query(
+        Todo, func.count(Comment.id).label('comments_count')
+    ).join(Comment, Todo.id == Comment.task_id)\
+     .group_by(Todo.id).order_by(func.count(Comment.id).desc()).limit(10).all()
+
+    # User achievements
+    achievements = UserAchievement.query.filter_by(user_id=current_user.id).all()
+
+    return render_template(
+        "dashboard.html",
+        tasks=tasks,
+        followed_users_tasks=followed_users_tasks,
+        recent_tasks=recent_tasks,
+        popular_tasks=popular_tasks,
+        achievements=achievements
+    )
 # -----------------------------
 # Achievement Helpers
 # -----------------------------
